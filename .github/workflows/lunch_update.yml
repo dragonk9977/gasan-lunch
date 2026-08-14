@@ -1,0 +1,36 @@
+name: Auto Update Lunch Map
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5' # 월~금 한국시간 11:00 (UTC 02:00)
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 파일 자동 저장을 위한 권한
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run lunch script
+        run: python lunchmapup.py
+
+      - name: Commit and push generated html
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.io"
+          git add gasan_lunch_map.html
+          git commit -m "Auto-update lunch map for today" || exit 0
+          git push
