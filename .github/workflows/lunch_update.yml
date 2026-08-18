@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 2 * * 1-5' # 월~금 한국시간 11:00 (UTC 02:00)
   workflow_dispatch: 
+  push:
+    paths:
+      - '오정메뉴.jpg'
+      - 'lunchmapup.py'
 
 jobs:
   build:
