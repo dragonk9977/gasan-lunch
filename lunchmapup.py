@@ -10,7 +10,9 @@ from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options  # 엣지 대신 크롬 옵션 사용
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -172,22 +174,24 @@ def calculate_walking_info(dest_coords):
         return 0, 0
 
 # ==========================================================
-# 6. Selenium 설정 (Xvfb 가상 화면 대응 크롬 설정)
+# 6. Selenium 설정 (webdriver-manager 적용)
 # ==========================================================
 
 chrome_options = Options()
-# --headless는 제거합니다! (가상 모니터 위에서 실제 창 형태로 돌립니다)
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1280,800")
+chrome_options.add_argument(
+    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
 
-# 봇 탐지 회피 옵션
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-chrome_options.add_experimental_option('useAutomationExtension', False)
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-driver = webdriver.Chrome(options=chrome_options)
+# 서버 환경과 버전을 자동으로 일치시키는 드라이버 설정
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=chrome_options
+)
 
 
 # ==========================================================
