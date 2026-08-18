@@ -172,22 +172,22 @@ def calculate_walking_info(dest_coords):
         return 0, 0
 
 # ==========================================================
-# 6. Selenium 설정 (봇 탐지 회피 옵션 추가)
+# 6. Selenium 설정 (Xvfb 가상 화면 대응 크롬 설정)
 # ==========================================================
 
 chrome_options = Options()
-chrome_options.add_argument("--headless")
+# --headless는 제거합니다! (가상 모니터 위에서 실제 창 형태로 돌립니다)
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--window-size=1280,800") # 창 크기를 키워보기
-# 봇 탐지 회피용 옵션들 추가
+chrome_options.add_argument("--window-size=1280,800")
+
+# 봇 탐지 회피 옵션
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option('useAutomationExtension', False)
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 driver = webdriver.Chrome(options=chrome_options)
-driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
 # ==========================================================
