@@ -8,6 +8,8 @@ on:
     paths:
       - '오정메뉴.jpg'
       - 'lunchmapup.py'
+  repository_dispatch:   # ★ 이 부분을 추가해 줍니다!
+    types: [update_lunch]
 
 jobs:
   build:
