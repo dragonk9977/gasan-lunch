@@ -62,9 +62,9 @@ def crop_ojeong_by_weekday(image_path):
         img = Image.open(image_path)
         width, height = img.size
 
-        # ★ 테이블 마진 값을 살짝 조절하여 테두리가 깔끔하게 떨어지도록 수정
-        left_margin = width * 0.13
-        right_margin = width * 0.81
+        # ★ 자르는 위치를 오른쪽으로 통째로 밀고 폭을 재조정
+        left_margin = width * 0.16   # 숫자가 클수록 오른쪽으로 이동 (기존 0.14)
+        right_margin = width * 0.83  # 오른쪽 끝 선 (기존 0.80)
         top_margin = height * 0.18
         bottom_margin = height * 0.88
 
@@ -103,7 +103,7 @@ def crop_ojeong_by_weekday(image_path):
         ).decode("utf-8")
 
         print(
-            f"  -> [오정] {['월', '화', '수', '목', '금'][ojeong_weekday_index]}요일 메뉴 깔끔하게 크롭 완료"
+            f"  -> [오정] {['월', '화', '수', '목', '금'][ojeong_weekday_index]}요일 메뉴 위치 대폭 수정 완료"
         )
 
         return "data:image/jpeg;base64," + encoded_string
