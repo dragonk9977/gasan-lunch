@@ -171,23 +171,23 @@ def calculate_walking_info(dest_coords):
     except:
         return 0, 0
 
-
 # ==========================================================
-# 6. Selenium 설정 (GitHub 서버 환경용 Chrome Headless)
+# 6. Selenium 설정 (봇 탐지 회피 옵션 추가)
 # ==========================================================
 
 chrome_options = Options()
-chrome_options.add_argument("--headless")  # 화면 창을 띄우지 않고 백그라운드 실행
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--window-size=390,844")
-chrome_options.add_argument(
-    "user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) "
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) "
-    "Version/16.0 Mobile/15E148 Safari/604.1"
-)
+chrome_options.add_argument("--window-size=1280,800") # 창 크기를 키워보기
+# 봇 탐지 회피용 옵션들 추가
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_experimental_option('useAutomationExtension', False)
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 driver = webdriver.Chrome(options=chrome_options)
+driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
 # ==========================================================
