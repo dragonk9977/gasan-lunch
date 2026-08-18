@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 파일 자동 저장을 위한 권한
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,8 +28,16 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run lunch script
-        run: python lunchmapup.py
+      - name: Set up Virtual Display (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Run lunch script with Virtual Display
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &
+          python lunchmapup.py
 
       - name: Commit and push generated html
         run: |
