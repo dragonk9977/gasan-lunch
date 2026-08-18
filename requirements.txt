@@ -3,3 +3,4 @@ folium
 geopy
 pillow
 requests
+webdriver-manager
