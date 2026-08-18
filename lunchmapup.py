@@ -563,6 +563,14 @@ menu_map = folium.Map(
     attr='Google'
 )
 
+# ★ 식당별 마커 색상 지정 (구글 지도 배경에서 눈에 띄는 색상들로 조합)
+color_map = {
+    "오정": "red",          # 빨간색
+    "런치투게더": "orange",    # 주황색
+    "런치타임": "purple",     # 보라색
+    "밥심": "darkred"       # 진한 빨강색
+}
+
 for data in scraped_data:
     popup_html = f"""
     <div
@@ -581,7 +589,7 @@ for data in scraped_data:
         >
             {data['name']}
         </h3>
-
+        
         <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
             🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
         </p>
@@ -604,7 +612,8 @@ for data in scraped_data:
     </div>
     """
 
-    marker_color = "green" if data["name"] == "오정" else "blue"
+    # 지정한 식당별 색상 적용 (등록되지 않은 식당은 기본 lightblue)
+    marker_color = color_map.get(data["name"], "lightblue")
 
     folium.Marker(
         location=[data["lat"], data["lng"]],
