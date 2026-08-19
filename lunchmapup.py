@@ -388,12 +388,15 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성
+# 11. Selenium 종료 및 구글 지도 생성 (카카오 폰트, 커스텀 마커, ESC 리셋 적용)
 # ==========================================================
 
 driver.quit()
 
-print(f"\n{'='*60}\n자동 수집 완료!\n{'='*60}")
+print()
+print("=" * 60)
+print("자동 수집 완료!")
+print("=" * 60)
 
 menu_map = folium.Map(
     location=[37.4795, 126.8820],
@@ -402,41 +405,115 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-color_map = {
-    "오정": "red",
-    "런치투게더": "orange",
-    "런치타임": "purple",
-    "밥심": "darkred"
+# ★ 카카오 폰트 웹폰트 및 ESC 키 입력 시 팝업 닫기 + 초기 화면 이동 자바스크립트 주입
+custom_header = """
+<style>
+@font-face {
+    font-family: 'KakaoBigFont';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2503@1.0/KakaoBigSans-Regular.woff2') format('woff2');
+    font-weight: 400;
 }
+* {
+    font-family: 'KakaoBigFont', sans-serif !important;
+}
+</style>
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        for (var key in window) {
+            if (window[key] && window[key] instanceof L.Map) {
+                window[key].closePopup();
+                window[key].setView([37.4795, 126.8820], 16); // 처음 시작했던 위치와 줌으로 복귀
+                break;
+            }
+        }
+    }
+});
+</script>
+"""
+menu_map.get_root().html.add_child(folium.Element(custom_header))
 
 for data in scraped_data:
     popup_html = f"""
-    <div style="width:400px; text-align:center; font-family:'Malgun Gothic', sans-serif;">
-        <h3 style="margin:5px 0; font-size:22px; color:#333;">{data['name']}</h3>
+    <div
+        style="
+        width:400px;
+        text-align:center;
+        "
+    >
+        <h3
+            style="
+            margin:5px 0;
+            font-size:22px;
+            color:#333;
+            "
+        >
+            {data['name']}
+        </h3>
+        
         <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
             🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
         </p>
+
         <hr style="margin:5px 0 10px 0;">
-        <div style="width:100%; overflow:visible; text-align:center;">
+
+        <div
+            style="
+            width:100%;
+            overflow:visible;
+            text-align:center;
+            "
+        >
             {data['html']}
         </div>
     </div>
     """
-    marker_color = color_map.get(data["name"], "lightblue")
+
+    # ★ 사각형 불투명 흰색 바탕 + 굵은 검은색 테두리 상자 마커 (DivIcon 사용)
+    custom_icon = folium.DivIcon(
+        html=f"""
+        <div style="
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 3px solid #000000;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #111111;
+            border-radius: 6px;
+            white-space: nowrap;
+            box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: translate(-50%, -50%);
+        ">
+            {data['name']}
+        </div>
+        """
+    )
+
     folium.Marker(
         location=[data["lat"], data["lng"]],
         popup=folium.Popup(popup_html, max_width=460),
         tooltip=data["name"],
-        icon=folium.Icon(color=marker_color, icon="cutlery", prefix="fa")
+        icon=custom_icon
     ).add_to(menu_map)
 
 all_lats = [data["lat"] for data in scraped_data]
 all_lngs = [data["lng"] for data in scraped_data]
 
 if all_lats and all_lngs:
-    menu_map.fit_bounds([[min(all_lats), min(all_lngs)], [max(all_lats), max(all_lngs)]], padding=(30, 30))
+    menu_map.fit_bounds(
+        [
+            [min(all_lats), min(all_lngs)],
+            [max(all_lats), max(all_lngs)]
+        ],
+        padding=(30, 30)
+    )
 
 output_file = "gasan_lunch_map.html"
 menu_map.save(output_file)
 
-print(f"\n{'='*60}\n🎉 구글 지도 기반 HTML 파일 성공 생성!\n{'='*60}")
+print()
+print("=" * 60)
+print("🎉 카카오 폰트 및 커스텀 마커 적용 완료!")
+print(f"📄 파일 : {output_file}")
+print("=" * 60)
