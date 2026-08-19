@@ -388,7 +388,7 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성 (카카오 폰트, 커스텀 마커, ESC 리셋 적용)
+# 11. Selenium 종료 및 구글 지도 생성 (마자 여백 확대, 동적 ESC 초기화 적용)
 # ==========================================================
 
 driver.quit()
@@ -405,7 +405,7 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-# ★ 카카오 폰트 웹폰트 및 ESC 키 입력 시 팝업 닫기 + 초기 화면 이동 자바스크립트 주입
+# ★ 카카오 폰트 적용 및 처음 로드된 지도 위치를 기억했다가 ESC 누르면 정확히 그 위치로 돌아가는 스크립트
 custom_header = """
 <style>
 @font-face {
@@ -418,13 +418,41 @@ custom_header = """
 }
 </style>
 <script>
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
+let initialCenter = null;
+let initialZoom = null;
+let mapObj = null;
+
+// 지도가 처음 만들어져서 화면에 딱 잡힌 순간의 위치와 줌 레벨을 기억해둡니다.
+window.addEventListener('load', function() {
+    setTimeout(function() {
         for (var key in window) {
             if (window[key] && window[key] instanceof L.Map) {
-                window[key].closePopup();
-                window[key].setView([37.4795, 126.8820], 16); // 처음 시작했던 위치와 줌으로 복귀
+                mapObj = window[key];
+                initialCenter = mapObj.getCenter();
+                initialZoom = mapObj.getZoom();
                 break;
+            }
+        }
+    }, 400);
+});
+
+// ESC를 누르면 팝업을 닫고, 정확히 처음의 그 깔끔한 전체 지도 화면으로 복귀합니다.
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (!mapObj) {
+            for (var key in window) {
+                if (window[key] && window[key] instanceof L.Map) {
+                    mapObj = window[key];
+                    initialCenter = mapObj.getCenter();
+                    initialZoom = mapObj.getZoom();
+                    break;
+                }
+            }
+        }
+        if (mapObj) {
+            mapObj.closePopup();
+            if (initialCenter && initialZoom) {
+                mapObj.setView(initialCenter, initialZoom);
             }
         }
     }
@@ -435,53 +463,31 @@ menu_map.get_root().html.add_child(folium.Element(custom_header))
 
 for data in scraped_data:
     popup_html = f"""
-    <div
-        style="
-        width:400px;
-        text-align:center;
-        "
-    >
-        <h3
-            style="
-            margin:5px 0;
-            font-size:22px;
-            color:#333;
-            "
-        >
-            {data['name']}
-        </h3>
-        
+    <div style="width:400px; text-align:center;">
+        <h3 style="margin:5px 0; font-size:22px; color:#333;">{data['name']}</h3>
         <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
             🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
         </p>
-
         <hr style="margin:5px 0 10px 0;">
-
-        <div
-            style="
-            width:100%;
-            overflow:visible;
-            text-align:center;
-            "
-        >
+        <div style="width:100%; overflow:visible; text-align:center;">
             {data['html']}
         </div>
     </div>
     """
 
-    # ★ 사각형 불투명 흰색 바탕 + 굵은 검은색 테두리 상자 마커 (DivIcon 사용)
+    # ★ 박스 패딩을 넉넉하게 키우고 글자 크기도 보기 좋게 조정
     custom_icon = folium.DivIcon(
         html=f"""
         <div style="
             background-color: rgba(255, 255, 255, 0.95);
             border: 3px solid #000000;
-            padding: 5px 10px;
+            padding: 8px 14px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 15px;
             color: #111111;
-            border-radius: 6px;
+            border-radius: 8px;
             white-space: nowrap;
-            box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
             text-align: center;
             transform: translate(-50%, -50%);
         ">
@@ -514,6 +520,6 @@ menu_map.save(output_file)
 
 print()
 print("=" * 60)
-print("🎉 카카오 폰트 및 커스텀 마커 적용 완료!")
+print("🎉 마커 상자 크기 확장 및 동적 ESC 복귀 적용 완료!")
 print(f"📄 파일 : {output_file}")
 print("=" * 60)
