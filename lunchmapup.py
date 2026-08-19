@@ -388,7 +388,7 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성 (마자 여백 확대, 동적 ESC 초기화 적용)
+# 11. Selenium 종료 및 구글 지도 생성 (마커 박스 크기 및 앵커 완벽 고정)
 # ==========================================================
 
 driver.quit()
@@ -405,7 +405,7 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-# ★ 카카오 폰트 적용 및 처음 로드된 지도 위치를 기억했다가 ESC 누르면 정확히 그 위치로 돌아가는 스크립트
+# 카카오 폰트 적용 및 ESC 키 입력 시 초기 화면 복귀 스크립트
 custom_header = """
 <style>
 @font-face {
@@ -422,7 +422,6 @@ let initialCenter = null;
 let initialZoom = null;
 let mapObj = null;
 
-// 지도가 처음 만들어져서 화면에 딱 잡힌 순간의 위치와 줌 레벨을 기억해둡니다.
 window.addEventListener('load', function() {
     setTimeout(function() {
         for (var key in window) {
@@ -436,7 +435,6 @@ window.addEventListener('load', function() {
     }, 400);
 });
 
-// ESC를 누르면 팝업을 닫고, 정확히 처음의 그 깔끔한 전체 지도 화면으로 복귀합니다.
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         if (!mapObj) {
@@ -475,13 +473,15 @@ for data in scraped_data:
     </div>
     """
 
-    # ★ 박스 패딩을 넉넉하게 키우고 글자 크기도 보기 좋게 조정
+    # ★ DivIcon에 넉넉한 icon_size와 icon_anchor를 지정하여 글자 잘림 현상 원천 차단
     custom_icon = folium.DivIcon(
+        icon_size=(150, 50),
+        icon_anchor=(75, 25),
         html=f"""
         <div style="
             background-color: rgba(255, 255, 255, 0.95);
             border: 3px solid #000000;
-            padding: 8px 14px;
+            padding: 6px 12px;
             font-weight: bold;
             font-size: 15px;
             color: #111111;
@@ -489,7 +489,6 @@ for data in scraped_data:
             white-space: nowrap;
             box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
             text-align: center;
-            transform: translate(-50%, -50%);
         ">
             {data['name']}
         </div>
@@ -520,6 +519,6 @@ menu_map.save(output_file)
 
 print()
 print("=" * 60)
-print("🎉 마커 상자 크기 확장 및 동적 ESC 복귀 적용 완료!")
+print("🎉 마커 박스 크기 및 여백 완벽 수정 완료!")
 print(f"📄 파일 : {output_file}")
 print("=" * 60)
