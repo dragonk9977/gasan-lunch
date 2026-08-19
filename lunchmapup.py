@@ -388,7 +388,7 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성 (마커 박스 크기 및 앵커 완벽 고정)
+# 11. Selenium 종료 및 구글 지도 생성 (X 버튼 및 ESC 팝업 닫기 시 지도 원위치 복귀 적용)
 # ==========================================================
 
 driver.quit()
@@ -405,7 +405,7 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-# 카카오 폰트 적용 및 ESC 키 입력 시 초기 화면 복귀 스크립트
+# 카카오 폰트 적용 및 팝업 닫힘 이벤트(X버튼, ESC 등) 감지하여 초기 화면 복귀 스크립트
 custom_header = """
 <style>
 @font-face {
@@ -429,29 +429,24 @@ window.addEventListener('load', function() {
                 mapObj = window[key];
                 initialCenter = mapObj.getCenter();
                 initialZoom = mapObj.getZoom();
+                
+                // ★ 팝업이 닫히는 모든 순간(X 버튼 클릭, ESC, 지도 여백 클릭 등)을 감지하여 초기 위치로 복귀
+                mapObj.on('popupclose', function() {
+                    if (initialCenter && initialZoom) {
+                        mapObj.setView(initialCenter, initialZoom);
+                    }
+                });
                 break;
             }
         }
     }, 400);
 });
 
+// ESC 키를 누르면 팝업창을 닫도록 명령 (popupclose 이벤트가 감지하여 알아서 원위치로 보냄)
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        if (!mapObj) {
-            for (var key in window) {
-                if (window[key] && window[key] instanceof L.Map) {
-                    mapObj = window[key];
-                    initialCenter = mapObj.getCenter();
-                    initialZoom = mapObj.getZoom();
-                    break;
-                }
-            }
-        }
         if (mapObj) {
             mapObj.closePopup();
-            if (initialCenter && initialZoom) {
-                mapObj.setView(initialCenter, initialZoom);
-            }
         }
     }
 });
@@ -473,7 +468,6 @@ for data in scraped_data:
     </div>
     """
 
-    # ★ DivIcon에 넉넉한 icon_size와 icon_anchor를 지정하여 글자 잘림 현상 원천 차단
     custom_icon = folium.DivIcon(
         icon_size=(150, 50),
         icon_anchor=(75, 25),
@@ -519,6 +513,6 @@ menu_map.save(output_file)
 
 print()
 print("=" * 60)
-print("🎉 마커 박스 크기 및 여백 완벽 수정 완료!")
+print("🎉 X 버튼 및 ESC 팝업 닫기 시 지도 원위치 복귀 적용 완료!")
 print(f"📄 파일 : {output_file}")
 print("=" * 60)
