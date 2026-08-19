@@ -388,7 +388,7 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성 (X 버튼 및 ESC 팝업 닫기 시 지도 원위치 복귀 적용)
+# 11. Selenium 종료 및 구글 지도 생성 (모바일 최적화: 왕큰 X버튼 & 화면 고정 '전체보기' 버튼 추가)
 # ==========================================================
 
 driver.quit()
@@ -405,7 +405,7 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-# 카카오 폰트 적용 및 팝업 닫힘 이벤트(X버튼, ESC 등) 감지하여 초기 화면 복귀 스크립트
+# 모바일 터치 최적화 CSS 및 JS (왕큰 X버튼, 전체보기 버튼, ESC 지원)
 custom_header = """
 <style>
 @font-face {
@@ -416,7 +416,35 @@ custom_header = """
 * {
     font-family: 'KakaoBigFont', sans-serif !important;
 }
+
+/* ★ 모바일에서 팝업 닫기(X) 버튼을 손가락으로 쉽게 누를 수 있게 대폭 확대 */
+.leaflet-popup-close-button {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 8px !important;
+    font-size: 26px !important;
+    color: #e74c3c !important;
+    font-weight: bold !important;
+}
+
+/* ★ 핸드폰 화면 우측 상단에 항상 떠 있는 '전체보기' 버튼 스타일 */
+.reset-map-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 99999;
+    background: #ffffff;
+    border: 3px solid #000000;
+    padding: 10px 16px;
+    font-weight: bold;
+    font-size: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    color: #111;
+}
 </style>
+
 <script>
 let initialCenter = null;
 let initialZoom = null;
@@ -429,8 +457,22 @@ window.addEventListener('load', function() {
                 mapObj = window[key];
                 initialCenter = mapObj.getCenter();
                 initialZoom = mapObj.getZoom();
-                
-                // ★ 팝업이 닫히는 모든 순간(X 버튼 클릭, ESC, 지도 여백 클릭 등)을 감지하여 초기 위치로 복귀
+
+                // 화면 우측 상단에 '전체보기' 버튼 자동 생성
+                var btn = document.createElement('div');
+                btn.innerHTML = '🗺️ 전체보기';
+                btn.className = 'reset-map-btn';
+                btn.onclick = function() {
+                    if (mapObj) {
+                        mapObj.closePopup();
+                        if (initialCenter && initialZoom) {
+                            mapObj.setView(initialCenter, initialZoom);
+                        }
+                    }
+                };
+                document.body.appendChild(btn);
+
+                // 팝업이 닫힐 때 원위치 복귀
                 mapObj.on('popupclose', function() {
                     if (initialCenter && initialZoom) {
                         mapObj.setView(initialCenter, initialZoom);
@@ -442,7 +484,7 @@ window.addEventListener('load', function() {
     }, 400);
 });
 
-// ESC 키를 누르면 팝업창을 닫도록 명령 (popupclose 이벤트가 감지하여 알아서 원위치로 보냄)
+// PC 사용자용 ESC 지원
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         if (mapObj) {
@@ -456,8 +498,8 @@ menu_map.get_root().html.add_child(folium.Element(custom_header))
 
 for data in scraped_data:
     popup_html = f"""
-    <div style="width:400px; text-align:center;">
-        <h3 style="margin:5px 0; font-size:22px; color:#333;">{data['name']}</h3>
+    <div style="width:320px; text-align:center; padding-top:10px;">
+        <h3 style="margin:5px 0; font-size:20px; color:#333;">{data['name']}</h3>
         <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
             🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
         </p>
@@ -491,7 +533,7 @@ for data in scraped_data:
 
     folium.Marker(
         location=[data["lat"], data["lng"]],
-        popup=folium.Popup(popup_html, max_width=460),
+        popup=folium.Popup(popup_html, max_width=380),
         tooltip=data["name"],
         icon=custom_icon
     ).add_to(menu_map)
@@ -513,6 +555,6 @@ menu_map.save(output_file)
 
 print()
 print("=" * 60)
-print("🎉 X 버튼 및 ESC 팝업 닫기 시 지도 원위치 복귀 적용 완료!")
+print("🎉 모바일 최적화(큰 X버튼, 전체보기 버튼) 적용 완료!")
 print(f"📄 파일 : {output_file}")
 print("=" * 60)
