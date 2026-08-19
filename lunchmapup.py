@@ -388,7 +388,7 @@ for item in cafeteria_list:
     time.sleep(1.5)
 
 # ==========================================================
-# 11. Selenium 종료 및 구글 지도 생성 (모바일 최적화: 왕큰 X버튼 & 화면 고정 '전체보기' 버튼 추가)
+# 11. Selenium 종료 및 구글 지도 생성 (여백 터치 팝업 유지, 팝업 터치 시 닫힘 및 원위치 복귀)
 # ==========================================================
 
 driver.quit()
@@ -405,7 +405,6 @@ menu_map = folium.Map(
     attr='Google'
 )
 
-# 모바일 터치 최적화 CSS 및 JS (왕큰 X버튼, 전체보기 버튼, ESC 지원)
 custom_header = """
 <style>
 @font-face {
@@ -417,7 +416,7 @@ custom_header = """
     font-family: 'KakaoBigFont', sans-serif !important;
 }
 
-/* ★ 모바일에서 팝업 닫기(X) 버튼을 손가락으로 쉽게 누를 수 있게 대폭 확대 */
+/* 팝업 닫기(X) 버튼 확대 */
 .leaflet-popup-close-button {
     width: 40px !important;
     height: 40px !important;
@@ -427,7 +426,7 @@ custom_header = """
     font-weight: bold !important;
 }
 
-/* ★ 핸드폰 화면 우측 상단에 항상 떠 있는 '전체보기' 버튼 스타일 */
+/* 우측 상단 '전체보기' 버튼 스타일 */
 .reset-map-btn {
     position: fixed;
     top: 15px;
@@ -455,10 +454,11 @@ window.addEventListener('load', function() {
         for (var key in window) {
             if (window[key] && window[key] instanceof L.Map) {
                 mapObj = window[key];
+                window.mapObj = mapObj; // 팝업 내부에서 참조할 수 있도록 전역 등록
                 initialCenter = mapObj.getCenter();
                 initialZoom = mapObj.getZoom();
 
-                // 화면 우측 상단에 '전체보기' 버튼 자동 생성
+                // 우측 상단 전체보기 버튼
                 var btn = document.createElement('div');
                 btn.innerHTML = '🗺️ 전체보기';
                 btn.className = 'reset-map-btn';
@@ -484,7 +484,6 @@ window.addEventListener('load', function() {
     }, 400);
 });
 
-// PC 사용자용 ESC 지원
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         if (mapObj) {
@@ -497,8 +496,9 @@ document.addEventListener('keydown', function(e) {
 menu_map.get_root().html.add_child(folium.Element(custom_header))
 
 for data in scraped_data:
+    # ★ 팝업 창 안쪽을 터치하면 팝업이 닫히며 초기 지도 위치로 이동하도록 설정
     popup_html = f"""
-    <div style="width:320px; text-align:center; padding-top:10px;">
+    <div style="width:320px; text-align:center; padding-top:10px; cursor:pointer;" onclick="if(window.mapObj) {{ window.mapObj.closePopup(); }}">
         <h3 style="margin:5px 0; font-size:20px; color:#333;">{data['name']}</h3>
         <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
             🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
@@ -507,6 +507,7 @@ for data in scraped_data:
         <div style="width:100%; overflow:visible; text-align:center;">
             {data['html']}
         </div>
+        <div style="font-size:11px; color:#888; margin-top:8px; font-style:italic;">(이미지나 상자를 터치하면 닫힙니다)</div>
     </div>
     """
 
@@ -533,7 +534,8 @@ for data in scraped_data:
 
     folium.Marker(
         location=[data["lat"], data["lng"]],
-        popup=folium.Popup(popup_html, max_width=380),
+        # ★ close_onclick=False를 주어 지도 여백을 터치해도 팝업이 닫히지 않도록 고정
+        popup=folium.Popup(popup_html, max_width=380, close_onclick=False),
         tooltip=data["name"],
         icon=custom_icon
     ).add_to(menu_map)
@@ -555,6 +557,6 @@ menu_map.save(output_file)
 
 print()
 print("=" * 60)
-print("🎉 모바일 최적화(큰 X버튼, 전체보기 버튼) 적용 완료!")
+print("🎉 여백 터치 유지 및 팝업 터치 시 닫힘/원위치 복귀 적용 완료!")
 print(f"📄 파일 : {output_file}")
 print("=" * 60)
