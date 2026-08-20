@@ -6,6 +6,11 @@ on:
   repository_dispatch:
     types: [update_lunch]
   workflow_dispatch:
+    inputs:
+      menu_text:
+        description: '테스트용 메뉴 텍스트 입력'
+        required: false
+        default: '테스트 메뉴입니다.'
 
 jobs:
   build:
@@ -24,17 +29,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Set up Virtual Display (Xvfb)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-
-      - name: Run lunch script with Virtual Display
+      - name: Run lunch script
         env:
-          MENU_TEXT: ${{ github.event.client_payload.menu_text }}
+          # MacroDroid 페이로드 또는 깃허브 수동 입력값을 둘 다 수용
+          MENU_TEXT: ${{ github.event.client_payload.menu_text || github.event.inputs.menu_text }}
         run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &
           python lunchmapup.py
 
       - name: Commit and push generated html
