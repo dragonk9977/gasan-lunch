@@ -1,128 +1,173 @@
-import os
-import folium
+# ==========================================================
+# 11. Selenium 종료 및 구글 지도 생성 (여백 터치 팝업 유지, 팝업 터치 시 닫힘 및 원위치 복귀)
+# ==========================================================
 
-# MacroDroid 또는 깃허브 수동 입력에서 메뉴 텍스트 가져오기
-payload_text = os.environ.get("MENU_TEXT", "")
-if not payload_text:
-    payload_text = "MacroDroid 알림 연동 대기 중..."
+driver.quit()
 
-# 모든 식당 데이터를 담는 리스트 (밥심, 런치투게더, 런치타임, 온정찬 모두 포함)
-scraped_data = []
+print()
+print("=" * 60)
+print("자동 수집 완료!")
+print("=" * 60)
 
-# 1. 밥심
-scraped_data.append({
-    'name': '밥심',
-    'lat': 37.4812,
-    'lng': 126.8815,
-    'walk_min': 4,
-    'dist': 250,
-    'html': "<div style='font-size:14px; text-align:center;'>밥심 기본 메뉴 정보</div>"
-})
-
-# 2. 런치투게더
-scraped_data.append({
-    'name': '런치투게더',
-    'lat': 37.4780,
-    'lng': 126.8850,
-    'walk_min': 5,
-    'dist': 320,
-    'html': "<div style='font-size:14px; text-align:center;'>런치투게더 기본 메뉴 정보</div>"
-})
-
-# 3. 런치타임 (스레드 / MacroDroid 연동)
-lunchtime_html = f"""
-<div style='font-size:15px; line-height:1.6; color:#333; text-align:left; padding:12px; background-color:#f9f9f9; border-radius:10px; border-left: 5px solid #2ecc71;'>
-    <strong style="color:#27ae60;">📢 오늘의 메뉴 (런치타임)</strong><br>
-    <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">
-    {payload_text.replace(chr(10), '<br>')}
-</div>
-"""
-scraped_data.append({
-    'name': '런치타임',
-    'lat': 37.4785,
-    'lng': 126.8820,
-    'walk_min': 3,
-    'dist': 180,
-    'html': lunchtime_html
-})
-
-# 4. 온정찬 (가산디지털1로 75-15 / 요청하신 주황색 동그라미 건물 위치 정확히 반영)
-onjeongchan_html = """
-<div style='font-size:14px; line-height:1.6; color:#333; text-align:center; padding:12px; background-color:#fff8f0; border-radius:10px; border-left: 5px solid #e67e22;'>
-    <strong style="color:#e67e22; font-size:16px;">🔥 온정찬 (가산디지털1로 75-15)</strong><br>
-    <p style="margin:8px 0; color:#555; font-size:13px;">최신 메뉴를 바로 확인할 수 있습니다.</p>
-    <a href="https://pf.kakao.com/_UIdXn/posts" target="_blank" style="display:inline-block; margin-top:8px; background:#fee500; color:#3c1e1e; padding:10px 18px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-        👉 온정찬 최신 메뉴 보러가기
-    </a>
-</div>
-"""
-scraped_data.append({
-    'name': '온정찬',
-    'lat': 37.4798,  # 가산디지털1로 75-15 위치 정확히 조준
-    'lng': 126.8835,
-    'walk_min': 3,
-    'dist': 200,
-    'html': onjeongchan_html
-})
-
-# 구글 지도 생성 (중심 좌표 설정)
 menu_map = folium.Map(
-    location=[37.4790, 126.8820],
+    location=[37.4795, 126.8820],
     zoom_start=16,
     tiles='https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
     attr='Google'
 )
 
-# 상단 전체보기 버튼 추가
 custom_header = """
 <style>
-.reset-map-btn { position: fixed; top: 15px; right: 15px; z-index: 99999; background: #fff; border: 3px solid #000; padding: 10px 16px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0px 4px 10px rgba(0,0,0,0.3); }
+@font-face {
+    font-family: 'KakaoBigFont';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2503@1.0/KakaoBigSans-Regular.woff2') format('woff2');
+    font-weight: 400;
+}
+* {
+    font-family: 'KakaoBigFont', sans-serif !important;
+}
+
+/* 팝업 닫기(X) 버튼 확대 */
+.leaflet-popup-close-button {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 8px !important;
+    font-size: 26px !important;
+    color: #e74c3c !important;
+    font-weight: bold !important;
+}
+
+/* 우측 상단 '전체보기' 버튼 스타일 */
+.reset-map-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 99999;
+    background: #ffffff;
+    border: 3px solid #000000;
+    padding: 10px 16px;
+    font-weight: bold;
+    font-size: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    color: #111;
+}
 </style>
+
 <script>
+let initialCenter = null;
+let initialZoom = null;
+let mapObj = null;
+
 window.addEventListener('load', function() {
     setTimeout(function() {
         for (var key in window) {
             if (window[key] && window[key] instanceof L.Map) {
-                var mapObj = window[key];
+                mapObj = window[key];
+                window.mapObj = mapObj; // 팝업 내부에서 참조할 수 있도록 전역 등록
+                initialCenter = mapObj.getCenter();
+                initialZoom = mapObj.getZoom();
+
+                // 우측 상단 전체보기 버튼
                 var btn = document.createElement('div');
                 btn.innerHTML = '🗺️ 전체보기';
                 btn.className = 'reset-map-btn';
-                btn.onclick = function() { mapObj.closePopup(); mapObj.setView([37.4790, 126.8820], 16); };
+                btn.onclick = function() {
+                    if (mapObj) {
+                        mapObj.closePopup();
+                        if (initialCenter && initialZoom) {
+                            mapObj.setView(initialCenter, initialZoom);
+                        }
+                    }
+                };
                 document.body.appendChild(btn);
+
+                // 팝업이 닫힐 때 원위치 복귀
+                mapObj.on('popupclose', function() {
+                    if (initialCenter && initialZoom) {
+                        mapObj.setView(initialCenter, initialZoom);
+                    }
+                });
                 break;
             }
         }
-    }, 500);
+    }, 400);
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (mapObj) {
+            mapObj.closePopup();
+        }
+    }
 });
 </script>
 """
 menu_map.get_root().html.add_child(folium.Element(custom_header))
 
-# 모든 마커 일괄 생성
 for data in scraped_data:
+    # ★ 팝업 창 안쪽을 터치하면 팝업이 닫히며 초기 지도 위치로 이동하도록 설정
     popup_html = f"""
-    <div style="width:320px; text-align:center; padding:5px;">
-        <h3 style="margin:8px 0; font-size:18px; color:#333;">{data['name']}</h3>
-        <p style="margin:0 0 10px 0; font-size:12px; color:#e74c3c; font-weight:bold;">🏢 회사에서 도보 {data['walk_min']}분 ({data['dist']}m)</p>
-        <hr style="margin:5px 0;">
-        {data['html']}
+    <div style="width:320px; text-align:center; padding-top:10px; cursor:pointer;" onclick="if(window.mapObj) {{ window.mapObj.closePopup(); }}">
+        <h3 style="margin:5px 0; font-size:20px; color:#333;">{data['name']}</h3>
+        <p style="margin:0 0 10px 0; font-size:13px; color:#e74c3c; font-weight:bold;">
+            🏢 회사에서 도보 약 {data['walk_min']}분 ({data['dist']}m)
+        </p>
+        <hr style="margin:5px 0 10px 0;">
+        <div style="width:100%; overflow:visible; text-align:center;">
+            {data['html']}
+        </div>
+        <div style="font-size:11px; color:#888; margin-top:8px; font-style:italic;">(이미지나 상자를 터치하면 닫힙니다)</div>
     </div>
     """
-    
+
+    custom_icon = folium.DivIcon(
+        icon_size=(150, 50),
+        icon_anchor=(75, 25),
+        html=f"""
+        <div style="
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 3px solid #000000;
+            padding: 6px 12px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #111111;
+            border-radius: 8px;
+            white-space: nowrap;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+            text-align: center;
+        ">
+            {data['name']}
+        </div>
+        """
+    )
+
     folium.Marker(
         location=[data["lat"], data["lng"]],
-        popup=folium.Popup(popup_html, max_width=360),
+        # ★ close_onclick=False를 주어 지도 여백을 터치해도 팝업이 닫히지 않도록 고정
+        popup=folium.Popup(popup_html, max_width=380, close_onclick=False),
         tooltip=data["name"],
-        icon=folium.DivIcon(html=f'<div style="background:#fff; border:2px solid #000; padding:5px 10px; border-radius:6px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3); font-size:13px;">{data["name"]}</div>')
+        icon=custom_icon
     ).add_to(menu_map)
 
-# 지도 영역 자동 조절
-all_lats = [d["lat"] for d in scraped_data]
-all_lngs = [d["lng"] for d in scraped_data]
-if all_lats and all_lngs:
-    menu_map.fit_bounds([[min(all_lats), min(all_lngs)], [max(all_lats), max(all_lngs)]], padding=(50, 50))
+all_lats = [data["lat"] for data in scraped_data]
+all_lngs = [data["lng"] for data in scraped_data]
 
-# 지도 저장
+if all_lats and all_lngs:
+    menu_map.fit_bounds(
+        [
+            [min(all_lats), min(all_lngs)],
+            [max(all_lats), max(all_lngs)]
+        ],
+        padding=(30, 30)
+    )
+
 output_file = "gasan_lunch_map.html"
 menu_map.save(output_file)
-print("모든 식당이 포함된 지도가 성공적으로 생성되었습니다!")
+
+print()
+print("=" * 60)
+print("🎉 여백 터치 유지 및 팝업 터치 시 닫힘/원위치 복귀 적용 완료!")
+print(f"📄 파일 : {output_file}")
+print("=" * 60)
