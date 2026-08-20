@@ -1,33 +1,27 @@
-name: Auto Update Lunch Map
+name: Auto-update lunch map
 
 on:
   schedule:
-    - cron: '0 2 * * 1-5' # 월~금 한국시간 11:00 (UTC 02:00)
-  workflow_dispatch: 
-  push:
-    paths:
-      - '오정메뉴.jpg'
-      - 'lunchmapup.py'
-  repository_dispatch:   # ★ 이 부분을 추가해 줍니다!
+    - cron: '30 1 * * 1-5'
+  repository_dispatch:
     types: [update_lunch]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Set up Virtual Display (Xvfb)
@@ -41,7 +35,7 @@ jobs:
           Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &
           python lunchmapup.py
 
-- name: Commit and push generated html
+      - name: Commit and push generated html
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
