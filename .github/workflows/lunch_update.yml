@@ -1,6 +1,10 @@
 name: Auto-update lunch map
 
 on:
+  schedule:
+    - cron: '30 1 * * 1-5'
+  repository_dispatch:
+    types: [update_lunch]
   workflow_dispatch:
     inputs:
       menu_text:
@@ -30,12 +34,12 @@ jobs:
 
       - name: Run lunch script
         env:
-          MENU_TEXT: ${{ github.event.inputs.menu_text }}
+          MENU_TEXT: ${{ github.event.client_payload.menu_text || github.event.inputs.menu_text }}
         run: |
           python lunchmapup.py
 
       - name: Commit and push generated html
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update lunch map"
+          commit_message: "Restore stable lunch map"
           file_pattern: gasan_lunch_map.html
