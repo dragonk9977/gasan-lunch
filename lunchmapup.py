@@ -6,9 +6,30 @@ payload_text = os.environ.get("MENU_TEXT", "")
 if not payload_text:
     payload_text = "MacroDroid 알림 연동 대기 중..."
 
+# 모든 식당 데이터를 담는 리스트 (밥심, 런치투게더, 런치타임, 온정찬 모두 포함)
 scraped_data = []
 
-# 1. 런치타임 (스레드 / MacroDroid 연동 데이터)
+# 1. 밥심
+scraped_data.append({
+    'name': '밥심',
+    'lat': 37.4812,
+    'lng': 126.8815,
+    'walk_min': 4,
+    'dist': 250,
+    'html': "<div style='font-size:14px; text-align:center;'>밥심 기본 메뉴 정보</div>"
+})
+
+# 2. 런치투게더
+scraped_data.append({
+    'name': '런치투게더',
+    'lat': 37.4780,
+    'lng': 126.8850,
+    'walk_min': 5,
+    'dist': 320,
+    'html': "<div style='font-size:14px; text-align:center;'>런치투게더 기본 메뉴 정보</div>"
+})
+
+# 3. 런치타임 (스레드 / MacroDroid 연동)
 lunchtime_html = f"""
 <div style='font-size:15px; line-height:1.6; color:#333; text-align:left; padding:12px; background-color:#f9f9f9; border-radius:10px; border-left: 5px solid #2ecc71;'>
     <strong style="color:#27ae60;">📢 오늘의 메뉴 (런치타임)</strong><br>
@@ -16,37 +37,35 @@ lunchtime_html = f"""
     {payload_text.replace(chr(10), '<br>')}
 </div>
 """
-
 scraped_data.append({
     'name': '런치타임',
     'lat': 37.4785,
-    'lng': 126.8810,
+    'lng': 126.8820,
     'walk_min': 3,
-    'dist': 200,
+    'dist': 180,
     'html': lunchtime_html
 })
 
-# 2. 온정찬 (가산디지털1로 75-15 / 주황색 동그라미 위치로 좌표 정밀 조정)
+# 4. 온정찬 (가산디지털1로 75-15 / 요청하신 주황색 동그라미 건물 위치 정확히 반영)
 onjeongchan_html = """
 <div style='font-size:14px; line-height:1.6; color:#333; text-align:center; padding:12px; background-color:#fff8f0; border-radius:10px; border-left: 5px solid #e67e22;'>
     <strong style="color:#e67e22; font-size:16px;">🔥 온정찬 (가산디지털1로 75-15)</strong><br>
-    <p style="margin:8px 0; color:#555; font-size:13px;">최신 메뉴를 바로 확인할 수 있도록 연결해 드립니다.</p>
+    <p style="margin:8px 0; color:#555; font-size:13px;">최신 메뉴를 바로 확인할 수 있습니다.</p>
     <a href="https://pf.kakao.com/_UIdXn/posts" target="_blank" style="display:inline-block; margin-top:8px; background:#fee500; color:#3c1e1e; padding:10px 18px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
         👉 온정찬 최신 메뉴 보러가기
     </a>
 </div>
 """
-
 scraped_data.append({
     'name': '온정찬',
-    'lat': 37.4802,  # 주황색 동그라미 건물 위치에 맞게 북쪽으로 상향 조정
-    'lng': 126.8828,  # 동쪽으로 살짝 조정
-    'walk_min': 4,
-    'dist': 250,
+    'lat': 37.4798,  # 가산디지털1로 75-15 위치 정확히 조준
+    'lng': 126.8835,
+    'walk_min': 3,
+    'dist': 200,
     'html': onjeongchan_html
 })
 
-# 3. 구글 지도 생성 (Folium)
+# 구글 지도 생성 (중심 좌표 설정)
 menu_map = folium.Map(
     location=[37.4790, 126.8820],
     zoom_start=16,
@@ -68,7 +87,7 @@ window.addEventListener('load', function() {
                 var btn = document.createElement('div');
                 btn.innerHTML = '🗺️ 전체보기';
                 btn.className = 'reset-map-btn';
-                btn.onclick = function() { mapObj.closePopup(); };
+                btn.onclick = function() { mapObj.closePopup(); mapObj.setView([37.4790, 126.8820], 16); };
                 document.body.appendChild(btn);
                 break;
             }
@@ -79,7 +98,7 @@ window.addEventListener('load', function() {
 """
 menu_map.get_root().html.add_child(folium.Element(custom_header))
 
-# 마커 일괄 생성
+# 모든 마커 일괄 생성
 for data in scraped_data:
     popup_html = f"""
     <div style="width:320px; text-align:center; padding:5px;">
@@ -94,7 +113,7 @@ for data in scraped_data:
         location=[data["lat"], data["lng"]],
         popup=folium.Popup(popup_html, max_width=360),
         tooltip=data["name"],
-        icon=folium.DivIcon(html=f'<div style="background:#fff; border:2px solid #000; padding:5px 10px; border-radius:6px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3); font-size:14px;">{data["name"]}</div>')
+        icon=folium.DivIcon(html=f'<div style="background:#fff; border:2px solid #000; padding:5px 10px; border-radius:6px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3); font-size:13px;">{data["name"]}</div>')
     ).add_to(menu_map)
 
 # 지도 영역 자동 조절
@@ -104,5 +123,6 @@ if all_lats and all_lngs:
     menu_map.fit_bounds([[min(all_lats), min(all_lngs)], [max(all_lats), max(all_lngs)]], padding=(50, 50))
 
 # 지도 저장
-menu_map.save("gasan_lunch_map.html")
-print("지도가 성공적으로 생성되었습니다!")
+output_file = "gasan_lunch_map.html"
+menu_map.save(output_file)
+print("모든 식당이 포함된 지도가 성공적으로 생성되었습니다!")
