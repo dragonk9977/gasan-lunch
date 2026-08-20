@@ -15,12 +15,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 깃허브 저장소 쓰기 권한 허용
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -36,11 +39,7 @@ jobs:
           python lunchmapup.py
 
       - name: Commit and push generated html
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git reset --soft origin/main
-          git add gasan_lunch_map.html
-          git commit -m "Auto-update lunch map for today" || exit 0
-          git push origin HEAD:main
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update lunch map for today"
+          file_pattern: gasan_lunch_map.html
