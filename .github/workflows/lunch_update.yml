@@ -41,10 +41,11 @@ jobs:
           Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &
           python lunchmapup.py
 
-      - name: Commit and push generated html
+- name: Commit and push generated html
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.io"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase
           git add gasan_lunch_map.html
           git commit -m "Auto-update lunch map for today" || exit 0
           git push
