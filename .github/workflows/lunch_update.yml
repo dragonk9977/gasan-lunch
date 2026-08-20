@@ -39,6 +39,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD
           git pull origin main --rebase
           git add gasan_lunch_map.html
           git commit -m "Auto-update lunch map for today" || exit 0
