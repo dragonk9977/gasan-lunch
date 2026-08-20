@@ -26,11 +26,11 @@ scraped_data.append({
     'html': lunchtime_html
 })
 
-# 2. 온정찬 (카카오 채널 - 봇 차단 우회 및 직관적인 바로가기 카드 적용)
+# 2. 온정찬 (가산디지털1로 75-15 / 주황색 동그라미 위치로 좌표 정밀 조정)
 onjeongchan_html = """
 <div style='font-size:14px; line-height:1.6; color:#333; text-align:center; padding:12px; background-color:#fff8f0; border-radius:10px; border-left: 5px solid #e67e22;'>
     <strong style="color:#e67e22; font-size:16px;">🔥 온정찬 (가산디지털1로 75-15)</strong><br>
-    <p style="margin:8px 0; color:#555; font-size:13px;">카카오 채널 보안 정책으로 인해 직접 크롤링하는 대신<br>최신 메뉴를 바로 확인할 수 있도록 연결해 드립니다.</p>
+    <p style="margin:8px 0; color:#555; font-size:13px;">최신 메뉴를 바로 확인할 수 있도록 연결해 드립니다.</p>
     <a href="https://pf.kakao.com/_UIdXn/posts" target="_blank" style="display:inline-block; margin-top:8px; background:#fee500; color:#3c1e1e; padding:10px 18px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
         👉 온정찬 최신 메뉴 보러가기
     </a>
@@ -39,8 +39,8 @@ onjeongchan_html = """
 
 scraped_data.append({
     'name': '온정찬',
-    'lat': 37.4795,
-    'lng': 126.8825,
+    'lat': 37.4802,  # 주황색 동그라미 건물 위치에 맞게 북쪽으로 상향 조정
+    'lng': 126.8828,  # 동쪽으로 살짝 조정
     'walk_min': 4,
     'dist': 250,
     'html': onjeongchan_html
